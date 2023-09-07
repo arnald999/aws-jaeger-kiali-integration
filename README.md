@@ -93,3 +93,114 @@ eksctl utils associate-iam-oidc-provider --region us-west-1 --cluster eksdemo1 -
 ```
 eksctl create nodegroup --cluster=eksdemo1 --region=us-west-1 --name=eksdemo-ng-public --node-type=t2.medium --nodes=2 --nodes-min=2 --nodes-max=4 --node-volume-size=10 --ssh-access --ssh-public-key=aws-jaeger-kiali-integration-key-pair --managed --asg-access --external-dns-access --full-ecr-access --appmesh-access --alb-ingress-access
 ```
+- Important components of Kubernetes(default namespace - kube-system)
+```
+kubectl -n kube-system get pods
+```
+
+### 10. Install Istio
+```
+curl -L https://istio.io/downloadIstio | ISTIO_VERSION=1.18.1 TARGET_ARCH=x86_64 sh -
+```
+```
+cd istio-1.18.1
+```
+
+Important files - (samples, manifests(profiles, pod related files))
+
+### 11. Set the Path
+- export PATH=$PWD/bin:$PATH
+
+
+### 12. For Connection Error
+```
+aws eks update-kubeconfig --name eksdemo1 --region us-west-1
+```
+
+
+### 13. INSTALL THE ISTIO WITH DEMO PROFILE (Profile an be demo, prod, etc.)
+```
+istioctl install --set profile=demo -y
+```
+
+### 14. Install Application from Github
+```
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.18/samples/bookinfo/platform/kube/bookinfo.yaml
+```
+Check if things are running
+```
+- kubectl get services
+- kubectl get pods
+
+- kubectl exec "$(kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}')" -c ratings -- curl -sS productpage:9080/productpage | grep -o "<title>.*</title>"
+
+```
+
+
+### 15. TO INJECT ISTIO AS INIT CONTAINER [NOW 2 PODS WILL RUN ]
+- kubectl label namespace default istio-injection=enabled
+- istioctl analyze
+- Delete all pods
+kubectl delete pod <pod_name>
+
+### 16. cd samples/bookinfo/networking/
+- kubectl apply -f bookinfo-gateway.yaml
+
+### 17. kubectl get vs
+- kubectl get gateway
+- kubectl get svc istio-ingressgateway -n istio-system
+
+### 18. Set the ingress IP and ports:
+
+```
+export INGRESS_HOST=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+export INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].port}')
+export SECURE_INGRESS_PORT=$(kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="https")].port}')
+
+```
+
+- echo $SECURE_INGRESS_PORT
+
+### 19. Forming Gateway URL(DNS from Load Balancer)
+- export INGRESS_HOST=ae8e08fbd79ab46c9be1ecf51cbf532a-1481031991.us-west-1.elb.amazonaws.com
+- export GATEWAY_URL=$INGRESS_HOST:$INGRESS_PORT
+- echo $GATEWAY_URL
+
+
+### 20. Hit the below URL
+- echo "http://$GATEWAY_URL/productpage"
+
+### 21. KIALI DASHOBAORD [ ALL TOOLS INSTALLATION ]
+```
+cd istio-1.18.1/samples/addons
+
+kubectl apply -f .
+```
+
+### 22. DO PORT FORWARD
+```
+kubectl port-forward --address 0.0.0.0 svc/kiali 9008:20001 -n istio-system
+```
+
+
+### 23. OPEN THE Security Group TO ALL TRAFFIC
+- EC2 Instance -> Security -> Security group -> Type (All Traffic) -> Source (Anywhere IPv4)
+
+### 24. Open Kiali Dashboard
+- http://<Public IPv4>:<FORWARDED-PORT>/kiali
+
+
+### 25. For JAEGER
+```
+kubectl port-forward --address 0.0.0.0 svc/tracing 8008:80 -n istio-system
+```
+
+### 26. Open Jaeger Dashboard
+- http://<Public IPv4>:<FORWARDED-PORT>/jaeger
+
+### 27. Delete node
+```
+eksctl delete nodegroup --cluster=eksdemo1 --region=us-west-1 --name=eksdemo-ng-public
+```
+
+### 28. Delete cluster
