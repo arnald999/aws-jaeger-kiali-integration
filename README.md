@@ -204,3 +204,6 @@ eksctl delete nodegroup --cluster=eksdemo1 --region=us-west-1 --name=eksdemo-ng-
 ```
 
 ### 28. Delete cluster
+```
+eksctl delete cluster --name=eksdemo1 --region=us-west-1
+```
