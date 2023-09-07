@@ -187,7 +187,7 @@ kubectl port-forward --address 0.0.0.0 svc/kiali 9008:20001 -n istio-system
 - EC2 Instance -> Security -> Security group -> Type (All Traffic) -> Source (Anywhere IPv4)
 
 ### 24. Open Kiali Dashboard
-- http://<Public IPv4>:<FORWARDED-PORT>/kiali
+- http://Public IPv4:FORWARDED-PORT/kiali
 
 
 ### 25. For JAEGER
@@ -196,7 +196,7 @@ kubectl port-forward --address 0.0.0.0 svc/tracing 8008:80 -n istio-system
 ```
 
 ### 26. Open Jaeger Dashboard
-- http://<Public IPv4>:<FORWARDED-PORT>/jaeger
+- http://Public IPv4:FORWARDED-PORT/jaeger
 
 ### 27. Delete node
 ```
